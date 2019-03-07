@@ -1,0 +1,145 @@
+#!/bin/bash
+
+function NewTrunk {
+	#------------------- SIP REGISTR STRING -----------------------#
+        echo -e "register=$login:$secret@$domen/$login" >> /tmp/asterisk/sip_regstring.conf
+        #------------------- SIP PROVIDER -----------------------------#
+        echo -e "[$name] \nusername=$login \nfromuser=$login \nsecret=$secret \nhost=$domen \nfromdomain=$domen" >> /tmp/asterisk/sip_provider.conf
+        echo -e "type=friend \nqualify=yes \ninsecure=port,invite \ndtmf=rfc2833 \nnat=no canreinvite=no \ndisallow=all \nallow=alaw&ulaw \nregistersip=yes \ncontext=in-city" >> /tmp/asterisk/sip_provider.conf 
+        #--------------------- SIP VARIABLES -----------------------------#
+        if [ -s /tmp/asterisk/template/sip/sip_variables.conf ]; then
+	        while read line;do
+       		var=`echo $line | sed 's|=.*$||'`
+       		declare -a arr
+        	arr+=($var)
+        	done < /tmp/asterisk/template/sip/sip_variables.conf
+        	if [ "${arr[1]}" == " " ]; then
+        		variable=$(( ${arr[1]} + 1))
+        		echo "$variable=$name" >> /tmp/asterisk/template/sip/sip_variables.conf
+        	else
+        		variable=$(( ${arr[0]} * "${arr[@]:(-1)}" + 1 ))
+        		echo "$variable=$name" >> /tmp/asterisk/template/sip/sip_variables.conf
+        	fi
+        else
+        	variable=2
+        	echo "$variable=$name" >> /tmp/asterisk/template/sip/sip_variables.conf
+        fi
+        #---------------------- User conf --------------------------#
+        num=`echo $number | sed 's|X|0|'`
+        ten=$(( $num + 10 ))
+        secret="secret="
+        Rbt="Rbt"
+        for (( i=$num; i<$ten; i++ ))
+        do
+		echo "[$num](salon)" >> /tmp/asterisk/template/sip/user.conf
+		echo "$secret$i$Rbt" >> /tmp/asterisk/template/sip/user.conf
+		echo "callerid=device <$i>" >> /tmp/asterisk/template/sip/user.conf
+		echo "context=out-city" >> /tmp/asterisk/template/sip/user.conf
+		echo " " >> /tmp/asterisk/template/sip/user.conf
+        done
+        #---------------------- SIP OUT --------------------------#
+        if [ -s /tmp/asterisk/template/exten/out.conf ];then
+       		while read line; do
+	               # if [[ "$line" == *"HangUp"* ]]; then
+	               #         LastNumber=`echo $line | sed 's|same => n(||' | sed 's|),HangUp()||' `
+                       #         echo $LastNumber
+       		       #         one=$(( $LastNumber + 1 ))
+                       #	 two=$(( $LastNumber + 2 ))
+                		echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /tmp/asterisk/template/exten/out.conf
+                	        echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /tmp/asterisk/template/exten/out.conf
+ 	                        echo " same =>     n,HangUp()" >> /tmp/asterisk/template/exten/out.conf
+                       # fi
+       	        done < /tmp/asterisk/template/exten/out.conf
+	else
+                echo "[out-city]" >> /tmp/asterisk/template/exten/out.conf
+                echo "include => conf_user_add" >> /tmp/asterisk/template/exten/out.conf
+                echo "include => in-company" >> /tmp/asterisk/template/exten/out.conf
+                echo "ignorepat => 9" >> /tmp/asterisk/template/exten/out.conf
+                echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /tmp/asterisk/template/exten/out.conf
+                echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /tmp/asterisk/template/exten/out.conf
+                echo " same =>     n,HangUp()" >> /tmp/asterisk/template/exten/out.conf
+	fi
+        #---------------------- Local conf --------------------------#
+        num=`echo $number | sed 's|X|0|'`
+        ten=$(( $num + 10 ))
+        if [ -s /tmp/asterisk/template/exten/local.conf ];then
+	        for (( i=$num; i<$ten; i++ ))
+                do
+	                echo "exten => $i,1,NoOp(Локальный вызов на \${exten}) " >> /tmp/asterisk/template/exten/local.conf
+                        echo " same =>      n,Dial(SIP/$i,45,TtM(recording,\${CALLRID(num),\${EXTEN}))" >> /tmp/asterisk/template/exten/local.conf
+                        echo " same =>      n,Hangup()" >> /tmp/asterisk/template/exten/local.conf
+                        echo " " >> /tmp/asterisk/template/exten/local.conf
+                done
+	else
+                echo "[local]" >> /tmp/asterisk/template/exten/local.conf
+                for (( i=$num; i<$ten; i++ ))
+                do
+	                echo "exten => $i,1,NoOp(Локальный вызов на \${exten}) " >> /tmp/asterisk/template/exten/local.conf
+                        echo " same =>      n,Dial(SIP/$i,45,TtM(recording,\${CALLRID(num),\${EXTEN}))" >> /tmp/asterisk/template/exten/local.conf
+                        echo " same =>      n,Hangup()" >> /tmp/asterisk/template/exten/local.conf
+                        echo " " >> /tmp/asterisk/template/exten/local.conf
+                        done
+        fi
+        #------------------- EXTENSION IN -----------------------------#
+        num=`echo $number | sed 's|X|0|'`
+        if [ -s /tmp/asterisk/template/exten/in.conf ]; then
+	        echo -e "exten => $login,1,Answer()" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n,Dial($num 60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n,Goto(end)" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n(end),HangUp()" >> /tmp/asterisk/template/exten/in.conf
+	else
+                echo -e "[in-city]" > /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,1,Answer()" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n,Dial($num 60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n,Goto(end)" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /tmp/asterisk/template/exten/in.conf
+                echo -e "exten => $login,n(end),HangUp()" >> /tmp/asterisk/template/exten/in.conf
+	fi
+
+}
+
+echo "Использовать готовый шаблон провайдеров? Ростелеком(r) , Дом-ру(d) , другой провайдер(o)."
+read item
+case "$item" in
+     r|R) echo "Ввели -=(r)=- будет выполняться контекст ростелекома."
+          echo -n "Введите имя транка:"
+          read name
+          echo -n "Введите логин:"
+          read login
+          echo -n "Введите пароль:"
+          read secret
+          echo -n "Введите домен:"
+          read domen
+          echo -n "Введите шаблон номеров для выхода в город пример. - 123X :"
+          read number
+          echo "Будет новый транк(n) или замена старому транку(c)?"
+          read trunk
+        ;;
+     d|D) echo "Ввели -=(d)=- будет выполняться контекст дом-ру."
+          echo -n "Введите имя транка:"
+          echo -n "Введите логин:"
+          echo -n "Введите пароль:"
+        ;;
+     o|O) echo "Ввели o будет выполняться контекст провайдера"
+          echo -n "Введите имя транка:"
+          echo -n "Введите логин:"
+          echo -n "Введите пароль:"
+          echo -n "Введите домен:"
+        ;;
+     n|N) echo "Выход из скрипта..."
+        ;;
+esac
+
+
+case "$trunk" in
+     n|N) echo "Создание нового транка..."
+         NewTrunk $item
+        ;;
+     c|C) echo "Изменение старого транка..."
+        ;;
+esac
+
+
