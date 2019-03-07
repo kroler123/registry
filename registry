@@ -1,5 +1,7 @@
 #!/bin/bash
 
+if [[ "$1" == "" ]]; then
+
 function NewTrunk {
 	#------------------- SIP REGISTR STRING -----------------------#
         echo -e "register=$login:$secret@$domen/$login" >> /etc/asterisk/sip_regstring.conf
@@ -141,5 +143,18 @@ case "$trunk" in
      c|C) echo "Изменение старого транка..."
         ;;
 esac
+
+fi
+
+if [[ "$1" == "--help" ]];then
+
+cat README.md
+
+else
+
+echo "Do not verb."
+
+fi
+
 
 
