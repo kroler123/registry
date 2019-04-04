@@ -9,7 +9,10 @@ function NewTrunk {
 	else
 		case "$item" in
      			r|R) echo -e "register=$login:$secret@$domen/$login" >> /etc/asterisk/sip_regstring.conf
+			   ;;
      			d|D) echo -e "register=$externalnumber:$secret:$login@$domen/$login" >> /etc/asterisk/sip_regstring.conf
+			   ;;
+		esac
        		echo "#------------------- SIP REGISTR STRING -----------------------#"
 		cat /etc/asterisk/sip_regstring.conf
 	fi
@@ -25,7 +28,7 @@ function NewTrunk {
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
 	else
-        	if [ -s /etc/asterisk/template/sip/sip_variables.conf ]; then
+        	if [ ! -s /etc/asterisk/template/sip/sip_variables.conf ]; then
 	        	while read line;do
        				var=`echo $line | sed 's|=.*$||'`
        				declare -a arr
@@ -55,9 +58,9 @@ function NewTrunk {
         	Rbt="Rbt"
         	for (( i=$num; i<$ten; i++ ))
         	do
-			echo "[$num](salon)" >> /etc/asterisk/template/sip/user.conf
+			echo "[$i](salon)" >> /etc/asterisk/template/sip/user.conf
 			echo "$secret$i$Rbt" >> /etc/asterisk/template/sip/user.conf
-			echo "callerid=device <$i>" >> /etc/asterisk/template/sip/user.conf
+			echo "callerid=device $i <$i>" >> /etc/asterisk/template/sip/user.conf
 			echo "context=out-city" >> /etc/asterisk/template/sip/user.conf
 			echo " " >> /etc/asterisk/template/sip/user.conf
         	done
@@ -67,8 +70,14 @@ function NewTrunk {
         #---------------------- SIP OUT --------------------------#
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
+	        if [ ! -s /etc/asterisk/template/exten/out.conf ];then
+                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
+                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
+                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
+                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
+		fi
 	else
-	        if [ -s /etc/asterisk/template/exten/out.conf ];then
+	        if [ ! -s /etc/asterisk/template/exten/out.conf ];then
         	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
             		echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
  	   	  	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
@@ -90,11 +99,11 @@ function NewTrunk {
 	else
         	num=`echo $number | sed 's|X|0|'`
         	ten=$(( $num + 10 ))
-       		if [ -s /etc/asterisk/template/exten/local.conf ];then
+       		if [ ! -s /etc/asterisk/template/exten/local.conf ];then
 	        	for (( i=$num; i<$ten; i++ ))
                 	do
-	                	echo "exten => $i,1,NoOp(Локальный вызов на \${exten}) " >> /etc/asterisk/template/exten/local.conf
-                        	echo " same =>      n,Dial(SIP/$i,45,TtM(recording,\${CALLRID(num),\${EXTEN}))" >> /etc/asterisk/template/exten/local.conf
+	                	echo "exten => $i,1,NoOp(Локальный вызов на \${EXTEN}) " >> /etc/asterisk/template/exten/local.conf
+                        	echo " same =>      n,Dial(SIP/$i,45,TtM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/local.conf
                         	echo " same =>      n,Hangup()" >> /etc/asterisk/template/exten/local.conf
                         	echo " " >> /etc/asterisk/template/exten/local.conf
                 	done
@@ -102,8 +111,8 @@ function NewTrunk {
                 	echo "[local]" >> /etc/asterisk/template/exten/local.conf
                 	for (( i=$num; i<$ten; i++ ))
                 	do
-	                	echo "exten => $i,1,NoOp(Локальный вызов на \${exten}) " >> /etc/asterisk/template/exten/local.conf
-                        	echo " same =>      n,Dial(SIP/$i,45,TtM(recording,\${CALLRID(num),\${EXTEN}))" >> /etc/asterisk/template/exten/local.conf
+	                	echo "exten => $i,1,NoOp(Локальный вызов на \${EXTEN}) " >> /etc/asterisk/template/exten/local.conf
+                        	echo " same =>      n,Dial(SIP/$i,45,TtM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/local.conf
                         	echo " same =>      n,Hangup()" >> /etc/asterisk/template/exten/local.conf
                         	echo " " >> /etc/asterisk/template/exten/local.conf
                         done
@@ -116,7 +125,7 @@ function NewTrunk {
 		echo "REGISTER not use"
 	else
         	num=`echo $number | sed 's|X|0|'`
-        	if [ -s /etc/asterisk/template/exten/in.conf ]; then
+        	if [ ! -s /etc/asterisk/template/exten/in.conf ]; then
 	        	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,Dial($num 60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
