@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [[ "$1" == "" ]]; then
 
 function NewTrunk {
@@ -28,7 +27,7 @@ function NewTrunk {
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
 	else
-        	if [ ! -s /etc/asterisk/template/sip/sip_variables.conf ]; then
+        	if [ -s /etc/asterisk/template/sip/sip_variables.conf ]; then
 	        	while read line;do
        				var=`echo $line | sed 's|=.*$||'`
        				declare -a arr
@@ -37,13 +36,16 @@ function NewTrunk {
         		if [ "${arr[1]}" == " " ]; then
         			variable=$(( ${arr[1]} + 1))
         			echo "$variable=$name" >> /etc/asterisk/template/sip/sip_variables.conf
+				echo "$variable=$name" >> /etc/asterisk/exten_global.conf 
         		else
         			variable=$(( ${arr[0]} * "${arr[@]:(-1)}" + 1 ))
         			echo "$variable=$name" >> /etc/asterisk/template/sip/sip_variables.conf
+				echo "$variable=$name" >> /etc/asterisk/exten_global.conf 
         		fi
         	else
         		variable=2
         		echo "$variable=$name" >> /etc/asterisk/template/sip/sip_variables.conf
+        		echo "$variable=$name" >> /etc/asterisk/exten_global.conf
         	fi
 		echo "#--------------------- SIP VARIABLES -----------------------------#"
 		cat /etc/asterisk/template/sip/sip_variables.conf
@@ -52,6 +54,7 @@ function NewTrunk {
 	if [ "$number" == "-" ];then
 		echo "Users not add"
 	else
+		echo "$number" > /etc/asterisk/template/sip/user.txt
         	num=`echo $number | sed 's|X|0|'`
         	ten=$(( $num + 10 ))
         	secret="secret="
@@ -67,39 +70,13 @@ function NewTrunk {
 		echo "#---------------------- User conf --------------------------#"
 		cat /etc/asterisk/template/sip/user.conf
 	fi
-        #---------------------- SIP OUT --------------------------#
-	if [ "$name" == "-" ];then
-		echo "REGISTER not use"
-	        if [ ! -s /etc/asterisk/template/exten/out.conf ];then
-                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
-                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
-		fi
-	else
-	        if [ ! -s /etc/asterisk/template/exten/out.conf ];then
-        	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
-            		echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
- 	   	  	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
-		else
-                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
-                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
-                	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
-                	echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
-                	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
-		fi
-		echo "#---------------------- SIP OUT --------------------------#"
-		cat /etc/asterisk/template/exten/out.conf
-	fi
         #---------------------- Local conf --------------------------#
 	if [ "$number" == "-" ];then
 		echo "users not add"
 	else
         	num=`echo $number | sed 's|X|0|'`
         	ten=$(( $num + 10 ))
-       		if [ ! -s /etc/asterisk/template/exten/local.conf ];then
+       		if [ -s /etc/asterisk/template/exten/local.conf ];then
 	        	for (( i=$num; i<$ten; i++ ))
                 	do
 	                	echo "exten => $i,1,NoOp(Локальный вызов на \${EXTEN}) " >> /etc/asterisk/template/exten/local.conf
@@ -120,15 +97,44 @@ function NewTrunk {
 	        echo "#---------------------- Local conf --------------------------#"
 		cat /etc/asterisk/template/exten/local.conf
 	fi
+        #---------------------- SIP OUT --------------------------#
+	if [ "$number" == "-"]; then
+		number=`cat /etc/asterisk/template/sip/user.txt`
+	fi
+	if [ "$name" == "-" ];then
+		echo "REGISTER not use"
+	        if [ -s /etc/asterisk/template/exten/out.conf ];then
+                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
+                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
+                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
+                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
+		fi
+	else
+	        if [ -s /etc/asterisk/template/exten/out.conf ];then
+        	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
+            		echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
+ 	   	  	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
+		else
+                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
+                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
+                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
+                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
+                	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
+                	echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
+                	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
+		fi
+		echo "#---------------------- SIP OUT --------------------------#"
+		cat /etc/asterisk/template/exten/out.conf
+	fi
         #------------------- EXTENSION IN -----------------------------#
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
 	else
         	num=`echo $number | sed 's|X|0|'`
-        	if [ ! -s /etc/asterisk/template/exten/in.conf ]; then
+        	if [ -s /etc/asterisk/template/exten/in.conf ]; then
 	        	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
-                	echo -e "exten => $login,n,Dial($num 60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
+                	echo -e "exten => $login,n,Dial($num ,60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
 	                echo -e "exten => $login,n,Goto(end)" >> /etc/asterisk/template/exten/in.conf
         	        echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(end),HangUp()" >> /etc/asterisk/template/exten/in.conf
@@ -136,7 +142,7 @@ function NewTrunk {
                 	echo -e "[in-city]" > /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
-                	echo -e "exten => $login,n,Dial($num 60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
+                	echo -e "exten => $login,n,Dial($num ,60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,Goto(end)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(end),HangUp()" >> /etc/asterisk/template/exten/in.conf
