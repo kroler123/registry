@@ -134,7 +134,7 @@ function NewTrunk {
         	if [ -s /etc/asterisk/template/exten/in.conf ]; then
 	        	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
-                	echo -e "exten => $login,n,Dial($num ,60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
+                	echo -e "exten => $login,n,Dial($num,60,tmM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
 	                echo -e "exten => $login,n,Goto(end)" >> /etc/asterisk/template/exten/in.conf
         	        echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(end),HangUp()" >> /etc/asterisk/template/exten/in.conf
@@ -142,7 +142,7 @@ function NewTrunk {
                 	echo -e "[in-city]" > /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
-                	echo -e "exten => $login,n,Dial($num ,60,tM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
+                	echo -e "exten => $login,n,Dial($num,60,tmM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,Goto(end)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(end),HangUp()" >> /etc/asterisk/template/exten/in.conf
