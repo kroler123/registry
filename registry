@@ -50,6 +50,14 @@ function NewTrunk {
 		echo "#--------------------- SIP VARIABLES -----------------------------#"
 		cat /etc/asterisk/template/sip/sip_variables.conf
 	fi
+        #------------------- EXTEN GLOBAL -----------------------------#
+	if [ "$number" == "-" ];then
+		echo "EXTEN GLOBAL not add"
+	else
+        	echo "$variable=$login" >> /etc/asterisk/exten_global.conf 
+		echo "#------------------- Exten GLOBAL -----------------------------#"
+		cat /etc/asterisk/exten_global.conf
+	fi
         #---------------------- User conf --------------------------#
 	if [ "$number" == "-" ];then
 		echo "Users not add"
