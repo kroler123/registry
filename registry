@@ -111,26 +111,14 @@ function NewTrunk {
 	fi
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
-	        if [ -s /etc/asterisk/template/exten/out.conf ];then
-                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
-                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
-		fi
+               	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
+               	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
+               	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
+               	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
 	else
-	        if [ -s /etc/asterisk/template/exten/out.conf ];then
-        	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
-            		echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
- 	   	  	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
-		else
-                	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
-                	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
-                	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
-                	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
-                	echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
-                	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
-		fi
+       	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
+         	echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
+ 	   	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
 		echo "#---------------------- SIP OUT --------------------------#"
 		cat /etc/asterisk/template/exten/out.conf
 	fi
