@@ -51,7 +51,7 @@ function NewTrunk {
 		cat /etc/asterisk/template/sip/sip_variables.conf
 	fi
         #------------------- EXTEN GLOBAL -----------------------------#
-	if [ "$number" == "-" ];then
+	if [ "$name" == "-" ];then
 		echo "EXTEN GLOBAL not add"
 	else
         	echo "$variable=$login" >> /etc/asterisk/exten_global.conf 
