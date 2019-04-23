@@ -19,7 +19,7 @@ function NewTrunk {
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
 	else
-        	echo -e "[$name] \nusername=$login \nfromuser=$login \nsecret=$secret \nhost=$domen \nfromdomain=$domen \ntype=friend \nqualify=yes \ninsecure=port,invite \ndtmf=rfc2833 \nnat=no canreinvite=no \ndisallow=all \nallow=alaw \nallow=ulaw \nregistersip=yes \ncontext=in-city" >> /etc/asterisk/sip_provider.conf 
+        	echo -e "[$name] \nusername=$login \nfromuser=$login \nsecret=$secret \nhost=$domen \nfromdomain=$domen \ntype=friend \nqualify=yes \ninsecure=port,invite \ndtmf=rfc2833 \nnat=no \ncanreinvite=no \ndisallow=all \nallow=alaw \nallow=ulaw \nregistersip=yes \ncontext=in-city" >> /etc/asterisk/sip_provider.conf 
 		echo "#------------------- SIP PROVIDER -----------------------------#"
 		cat /etc/asterisk/sip_provider.conf
 	fi
@@ -45,7 +45,6 @@ function NewTrunk {
         	else
         		variable=2
         		echo "$variable=$name" >> /etc/asterisk/template/sip/sip_variables.conf
-        		echo "$variable=$name" >> /etc/asterisk/exten_global.conf
         	fi
 		echo "#--------------------- SIP VARIABLES -----------------------------#"
 		cat /etc/asterisk/template/sip/sip_variables.conf
@@ -54,7 +53,7 @@ function NewTrunk {
 	if [ "$name" == "-" ];then
 		echo "EXTEN GLOBAL not add"
 	else
-        	echo "$variable=$login" >> /etc/asterisk/exten_global.conf 
+        	echo "$variable=$name" >> /etc/asterisk/exten_global.conf 
 		echo "#------------------- Exten GLOBAL -----------------------------#"
 		cat /etc/asterisk/exten_global.conf
 	fi
@@ -106,16 +105,10 @@ function NewTrunk {
 		cat /etc/asterisk/template/exten/local.conf
 	fi
         #---------------------- SIP OUT --------------------------#
-	if [ "$number" == "-"]; then
-		number=`cat /etc/asterisk/template/sip/user.txt`
-	fi
-	if [ "$name" == "-" ];then
+	if [ "$name" == "-" ]; then
 		echo "REGISTER not use"
-               	echo "[out-city]" >> /etc/asterisk/template/exten/out.conf
-               	echo "include => conf_user_add" >> /etc/asterisk/template/exten/out.conf
-               	echo "include => in-company" >> /etc/asterisk/template/exten/out.conf
-               	echo "ignorepat => 9" >> /etc/asterisk/template/exten/out.conf
 	else
+		number=`cat /etc/asterisk/template/sip/user.txt`
        	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
          	echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
  	   	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
@@ -126,7 +119,12 @@ function NewTrunk {
 	if [ "$name" == "-" ];then
 		echo "REGISTER not use"
 	else
-        	num=`echo $number | sed 's|X|0|'`
+		if [ $number  == "-" ]; then
+			numbs=`cat /etc/asterisk/template/sip/user.txt`
+        		num=`echo $numbs | sed 's|X|0|'`
+		else
+        		num=`echo $number | sed 's|X|0|'`
+		fi
         	if [ -s /etc/asterisk/template/exten/in.conf ]; then
 	        	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
