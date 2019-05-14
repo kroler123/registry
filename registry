@@ -109,7 +109,7 @@ function NewTrunk {
 		echo "REGISTER not use"
 	else
 		number=`cat /etc/asterisk/template/sip/user.txt`
-       	   	echo "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
+       	   	echo -e "exten => _9./_$number,1,NoOp(Городской вызов на \${EXTEN})" >> /etc/asterisk/template/exten/out.conf
          	echo " same =>     n,Dial(SIP/\${$variable}/\${EXTEN:1},60,TM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/out.conf
  	   	echo " same =>     n,HangUp()" >> /etc/asterisk/template/exten/out.conf
 		echo "#---------------------- SIP OUT --------------------------#"
@@ -128,7 +128,7 @@ function NewTrunk {
         	if [ -s /etc/asterisk/template/exten/in.conf ]; then
 	        	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
-                	echo -e "exten => $login,n,Dial($num,60,tmM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
+                	echo -e "exten => $login,n,Dial(SIP/$num,60,tmM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
 	                echo -e "exten => $login,n,Goto(end)" >> /etc/asterisk/template/exten/in.conf
         	        echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(end),HangUp()" >> /etc/asterisk/template/exten/in.conf
@@ -136,7 +136,7 @@ function NewTrunk {
                 	echo -e "[in-city]" > /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,1,Answer()" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,GotoIf(\$[\${BLACKLIST()}=1]?blacklist)" >> /etc/asterisk/template/exten/in.conf
-                	echo -e "exten => $login,n,Dial($num,60,tmM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
+                	echo -e "exten => $login,n,Dial(SIP/$num,60,tmM(recording,\${CALLERID(num)},\${EXTEN}))" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n,Goto(end)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(blacklist),Playback(/var/lib/asterisk/sounds/ru/tt-weasels)" >> /etc/asterisk/template/exten/in.conf
                 	echo -e "exten => $login,n(end),HangUp()" >> /etc/asterisk/template/exten/in.conf
